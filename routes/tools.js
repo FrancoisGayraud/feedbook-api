@@ -4,7 +4,7 @@ var exports = module.exports = {};
 const nodemailer = require('nodemailer');
 
 exports.verifyToken = (req, res, next) => {
-  token = req.headers.authorization;
+    token = req.headers.authorization;
   if (!token)
 		return res.status(422).json({status: 422, success: false, msg: 'No token has been send' });
   jwt.verify(token, config.secret, function(err, decoded) {

@@ -169,6 +169,8 @@ router.patch('/me', tools.verifyToken, (req, res, next) => {
     infos.username = req.body.username;
     infos.public_username = req.body.username;
   }
+  if (req.body.gender)
+    infos.gender = req.body.gender;
   let decoded = jwtDecode(token);
   if (!decoded)
     return res.status(403).json({status: 403, success: false, msg: "Token is invalid."});

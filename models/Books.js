@@ -40,6 +40,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true
     },
+    grade: {
+      type: DataTypes.INTEGER(1),
+      allowNull: true
+    }
   }, {
     tableName: 'Books'
   });

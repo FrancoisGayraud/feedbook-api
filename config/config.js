@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const sequelize = new Sequelize('Feedbook', 'FeedbookAPI', 'Feedbook100596API', {
-  host: '54.38.185.247',
+  host: 'feedbook.fr',
   dialect: 'mysql',
   operatorsAliases: false,
   define: {

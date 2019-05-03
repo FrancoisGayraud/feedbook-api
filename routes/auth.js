@@ -8,41 +8,80 @@ const randtoken = require('rand-token');
 
 router.post('/login', (req, res, next) => {
   if (!req.body || !req.body.email || !req.body.password) {
-    return res.status(422).json({status: 422, success: false, msg: 'Missing login information.'});
+    return res.status(422).json({
+      status: 422,
+      success: false,
+      msg: 'Missing login information.'
+    });
   }
-  models.Users.findOne({where : {email: req.body.email}}).then((usr) => {
+  models.Users.findOne({where : {
+    email: req.body.email
+  }}).then((usr) => {
     if (!usr)
-      return res.status(403).json({status: 403, success: false, msg: 'This mail doesn\'t exist.' });
+      return res.status(403).json({
+        status: 403,
+        success: false,
+        msg: 'This mail doesn\'t exist.'
+      });
     bcrypt.compare(req.body.password, usr.password, (err, isMatch) => {
       if (isMatch) {
-        jwt.sign({email: usr.email}, config.secret, {expiresIn: '24h'}, (err, token) => {
-          if (token) {
-            usr.update({token: token, last_login: new Date()}).then(() => {
-              return res.status(200).json({status: 200, success: true, msg: 'User successfully login.', token: token, refresh_token: usr.refresh_token});
-            })
-          }
-        });
+        jwt.sign({
+          email: usr.email},
+          config.secret,
+          {expiresIn: '24h'},
+          (err, token) => {
+            if (token) {
+              usr.update({token: token, last_login: new Date()}).then(() => {
+                return res.status(200).json({
+                  status: 200,
+                  success: true,
+                  msg: 'User successfully login.',
+                  token: token,
+                  refresh_token: usr.refresh_token
+                });
+              })
+            }
+          });
       } else {
-        return res.status(403).json({status: 403, success: false, msg: 'Wrong password.' });
+        return res.status(403).json({
+          status: 403,
+          success: false,
+          msg: 'Wrong password.'
+        });
       }
     });
   }).catch((err) => next(err));
 });
 
-// TODO : DOC DOC DOC (CE CALL A PAS BESOIN D4API TOKEN§§!!!) /!\
-
 router.patch('/password/reset/generate/code', (req, res, next) => {
   if (!req.body.email)
-    return res.status(422).json({status: 422, success: false, msg: 'Missing email.'});
+    return res.status(422).json({
+      status: 422,
+      success: false,
+      msg: 'Missing email.'
+    });
   let generated_reset_password_code = randtoken.generate(6);
   tools.sendMail(req.body.email, "Votre code de réinitialisation de vote mot de passe Feedbook : " + generated_reset_password_code, "Récupération de votre mot de passe Feedbook");
-  return models.Users.findOne({where : {email: req.body.email}}).then((usr) => {
+  return models.Users.findOne({
+    where : {
+      email: req.body.email
+    }}).then((usr) => {
     if (usr)
-      return usr.update({reset_password_code: generated_reset_password_code}).then(() => {
-        return res.status(200).json({status: 200, success: true, msg : "Reset code successfully sent to email."})
+      return usr.update({
+        reset_password_code: generated_reset_password_code
+      }).then(() => {
+        return res.status(200).json({
+          status: 200,
+          success: true,
+          msg : "Reset code successfully sent to email."
+        })
       });
     else
-      return res.status(403).json({status: 403, success: false, msg: "Email isn't associated with a Feedbook account."})
+      return res.status(403).json({
+        status: 403,
+        success: false,
+        msg: "Email isn't associated with a Feedbook account."
+      })
   }).catch((err) => next(err));
 });
 
@@ -59,12 +98,26 @@ router.post('/password/reset/', (req, res, next) => {
   let infos = {};
   infos.reset_password_code = null;
   if (!req.body.code)
-    return res.status(422).json({status: 422, success: false, msg: 'Missing code.'});
+    return res.status(422).json({
+      status: 422,
+      success: false,
+      msg: 'Missing code.'
+    });
   if (!req.body.password)
-    return res.status(422).json({status: 422, success: false, msg: 'Missing password.'});
-  return models.Users.findOne({where: {reset_password_code: req.body.code}}).then((usr) => {
+    return res.status(422).json({
+      status: 422,
+      success: false,
+      msg: 'Missing password.'
+    });
+  return models.Users.findOne({
+    where: {
+      reset_password_code: req.body.code
+    }}).then((usr) => {
     if (!usr)
-      return res.status(403).json({status: 403, success: false, msg: "This code is not valid."});
+      return res.status(403).json({
+        status: 403,
+        success: false,
+        msg: "This code is not valid."});
     else {
       bcrypt.genSalt(10, function (err, salt) {
         if (err) {
@@ -88,18 +141,41 @@ router.post('/password/reset/', (req, res, next) => {
 
 router.post('/token/refresh', (req, res, next) =>  {
   if (!req.body.refresh_token)
-    return res.status(422).json({status: 422, success: false, msg: 'Missing refresh_token.'});
+    return res.status(422).json({
+      status: 422,
+      success: false,
+      msg: 'Missing refresh_token.'
+    });
   else {
-    models.Users.findOne({ where : {refresh_token: req.body.refresh_token}}).then((usr) => {
+    models.Users.findOne({
+      where : {
+        refresh_token: req.body.refresh_token
+      }}).then((usr) => {
       if (!usr)
-        return res.status(403).json({status: 403, success: false, mgs: 'Refresh token is invalid.'});
-      jwt.sign({email: usr.email}, config.secret, {expiresIn: '24h'}, (err, token) => {
-        if (token) {
-          usr.update({token: token, last_login: new Date()}).then(() => {
-            return res.status(200).json({status: 200, success: true, msg: 'Token successfully refresh.', token: token});
-          })
-        }
-      })
+        return res.status(403).json({
+          status: 403,
+          success: false,
+          msg: 'Refresh token is invalid.'
+        });
+      jwt.sign({
+        email: usr.email},
+        config.secret,
+        {expiresIn: '24h'},
+        (err, token) => {
+          if (token) {
+            usr.update({
+              token: token,
+              last_login: new Date()
+            }).then(() => {
+              return res.status(200).json({
+                status: 200,
+                success: true,
+                msg: 'Token successfully refresh.',
+                token: token
+              });
+            })
+          }
+        })
     }).catch((err) => next(err));
   }
 });
@@ -116,7 +192,11 @@ router.get('/token/verify', (req, res, next) => {
 router.post('/register', (req, res, next) => {
   let user;
   if (req.body === undefined || !req.body.email || !req.body.password || !req.body.username || !req.body.first_name || !req.body.last_name) {
-    return res.status(422).json({status: 400, success: false, msg: 'Password, email, username, first_name and last_name are required.'});
+    return res.status(422).json({
+      status: 400,
+      success: false,
+      msg: 'Password, email, username, first_name and last_name are required.'
+    });
   }
   bcrypt.genSalt(10, function (err, salt) {
     if (err) {

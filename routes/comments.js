@@ -17,7 +17,8 @@ router.post('/', tools.verifyToken, (req, res, next) => {
       models.Comments.create({
         user_id: user.id,
         content: req.body.content,
-        book_id: req.body.book_id
+        book_id: req.body.book_id,
+        created_at: new Date()
       }).then((comment) => {
         return res.status(200).json({status: 200, msg: "Comment successfully added.", success: true, comment: comment});
       })
@@ -26,12 +27,14 @@ router.post('/', tools.verifyToken, (req, res, next) => {
 });
 
 // get all comments for a book
+// TODO CHANGER LA DOC, MOINS DE DATA DANS USER DE L'INCLUDE
 router.get('/books/:book_id', tools.verifyToken, (req, res, next) => {
   let decoded = jwtDecode(token);
   if (!decoded)
     return res.status(403).json({status: 403, success: false, msg: "Token is invalid"});
   else {
-    models.Comments.findAll({where: {book_id: req.params.book_id}, include: [{model: models.Users, as: 'user'}, {model: models.Books, as: 'book'}]}).then((comments) => {
+    return models.Comments.findAll({where: {book_id: req.params.book_id}, include: [{model: models.Users, as: 'user', attributes: ['username', 'email', 'last_login', 'date_joined', 'first_name', 'last_name', 'is_staff', 'is_active', 'is_superuser', 'id']},
+      {model: models.Books, as: 'book'}]}).then((comments) => {
       return res.status(200).json({status: 200, comments: comments, success: true, msg: "Comments successfully retrieved."});
     }).catch((err) => next(err));
   }
@@ -57,13 +60,12 @@ router.get('/me', tools.verifyToken, (req, res, next) => {
   }
 });
 
-// TODO : doc
 router.patch('/:id', tools.verifyToken, (req, res, next) =>  {
-  if (!req.body.comment)
-    return res.status(422).json({status: 422, success: false, msg: 'A content for the comment.'});
+  if (!req.body.content)
+    return res.status(422).json({status: 422, success: false, msg: 'A content for the comment is required.'});
   return models.Comments.findById(req.params.id).then((comment) => {
     if (comment)
-      return comment.update({content: req.body.comment}).then((comment) => {
+      return comment.update({content: req.body.content}).then((comment) => {
         return res.status(200).json({status: 200, msg: "Comment successfully updated", comment: comment})
       });
     else
@@ -73,9 +75,9 @@ router.patch('/:id', tools.verifyToken, (req, res, next) =>  {
 
 // TODO: tester
 router.get('/:id', tools.verifyToken, (req, res, next) =>  {
-  return models.Comments.findById(req.params.id).then((fav) => {
-    if (fav)
-      return res.status(200).json({status: 200, favorites: fav, msg: "Comment successfully retrieved.", success: true});
+  return models.Comments.findById(req.params.id).then((comment) => {
+    if (comment)
+      return res.status(200).json({status: 200, comment: comment, msg: "Comment successfully retrieved.", success: true});
     else
       return res.status(404).json({status: 404, msg: "Comment with this id not found", success: false});
   }).catch((err) => next(err));
@@ -87,8 +89,8 @@ router.delete('/:id', tools.verifyToken, (req, res, next) =>  {
   let decoded = jwtDecode(token);
   if (!decoded)
     return res.status(403).json({status: 403, success: false, msg: "Token is invalid"});
-  return models.Comments.findById(req.params.id).then((fav) => {
-    if (fav)
+  return models.Comments.findById(req.params.id).then((comment) => {
+    if (comment)
       models.Comments.destroy({where: {id: req.params.id}}).then(() => {
         return res.status(200).json({status: 200, msg: "Comment successfully deleted.", success: true});
       });
@@ -97,18 +99,17 @@ router.delete('/:id', tools.verifyToken, (req, res, next) =>  {
   }).catch((err) => next(err));
 });
 
-// TODO: doc
 router.delete('/books/:book_id', tools.verifyToken, (req, res, next) =>  {
   let decoded = jwtDecode(token);
   if (!decoded)
     return res.status(403).json({status: 403, success: false, msg: "Token is invalid"});
-  return models.Comments.findAll({book_id : req.params.book_id}).then((fav) => {
-    if (fav)
+  return models.Comments.findAll({book_id : req.params.book_id}).then((comment) => {
+    if (comment)
       models.Comments.destroy({where: {book_id: req.params.book_id}}).then(() => {
-        return res.status(200).json({status: 200, msg: "Comments successfully deleted.", success: true});
+        return res.status(200).json({status: 200, msg: "Comments for this book successfully deleted.", success: true});
       });
     else
-      return res.status(404).json({status: 404, msg: "Comments with this id not found", success: false});
+      return res.status(404).json({status: 404, msg: "No comments for this book.", success: false});
   }).catch((err) => next(err));
 });
 

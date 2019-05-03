@@ -1,17 +1,20 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const auth = require('./routes/auth');
+const profile = require('./routes/profile');
+const favorite = require('./routes/favorite');
+const books = require('./routes/books');
+const comments = require('./routes/comments');
+const messages = require('./routes/messages');
+const reviewers = require('./routes/reviewers');
+const reviews = require('./routes/reviews');
+const users = require('./routes/users');
 
-var auth = require('./routes/auth');
-var profile = require('./routes/profile');
-var favorite = require('./routes/favorite');
-var books = require('./routes/books');
-var comments = require('./routes/comments');
+const app = express();
 
-var app = express();
-
-var sequelize = require('./config/config');
+const sequelize = require('./config/config');
 
 require('./config/modelsRelations');
 
@@ -24,7 +27,10 @@ app.use('/api/v1/books', books);
 app.use('/api/v1/profile', profile);
 app.use('/api/v1/favorites', favorite);
 app.use('/api/v1/comments', comments);
-
+app.use('/api/v1/messages', messages);
+app.use('/api/v1/reviewers', reviewers);
+app.use('/api/v1/reviews', reviews);
+app.use('/api/v1/users', users);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

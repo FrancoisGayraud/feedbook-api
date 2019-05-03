@@ -1,22 +1,18 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('Comments', {
-    content: {
-      type: DataTypes.STRING(255),
-      allowNull: true
-    },
+  return sequelize.define('Reviewers', {
     id: {
-      type: DataTypes.INTEGER(7),
+      type: DataTypes.INTEGER(11),
       primaryKey: true,
       autoIncrement: true
     },
-    user_id: {
-      type: DataTypes.INTEGER(7),
+    reviewer_id: {
+      type: DataTypes.INTEGER(11),
       allowNull: true
     },
-    book_id: {
-      type: DataTypes.INTEGER(7),
+    author_id: {
+      type: DataTypes.INTEGER(11),
       allowNull: true
     },
     created_at: {
@@ -24,6 +20,6 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     }
   }, {
-    tableName: 'Comments'
+    tableName: 'Reviewers'
   });
 };

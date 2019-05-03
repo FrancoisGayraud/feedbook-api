@@ -48,7 +48,6 @@ router.post('/:id', tools.verifyToken, (req, res, next) => {
   }
 });
 
-// TODO : tester
 router.delete('/:id', tools.verifyToken, (req, res, next) =>  {
   let decoded = jwtDecode(token);
   if (!decoded)
@@ -65,11 +64,15 @@ router.delete('/:id', tools.verifyToken, (req, res, next) =>  {
   }).catch((err) => next(err));
 });
 
-// TODO: tester
 router.get('/:id', tools.verifyToken, (req, res, next) =>  {
   return models.Favorites.findById(req.params.id).then((fav) => {
     if (fav)
-      return res.status(200).json({status: 200, favorites: fav, msg: "Favorite successfully retrieved.", success: true});
+      return res.status(200).json({
+        status: 200,
+        favorites: fav,
+        msg: "Favorite successfully retrieved.",
+        success: true
+      });
     else
       return res.status(404).json({status: 404, msg: "Favorite with this id not found", success: false});
   }).catch((err) => next(err));

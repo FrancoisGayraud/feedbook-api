@@ -7,7 +7,7 @@ var basename  = path.basename(module.filename);
 var config    = require(__dirname + '/../config/config');
 var db        = {};
 
-//Create a Sequelize connection to the database using the URL in         config/config.js
+//Create a Sequelize connection to the database using the URL in config/config.js
 var sequelize = config;
 
 //Load all the models

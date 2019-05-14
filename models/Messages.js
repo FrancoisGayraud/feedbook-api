@@ -19,6 +19,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(1000),
       allowNull: true
     },
+    subject: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
     sent_at: {
       type: DataTypes.DATE,
       allowNull: true

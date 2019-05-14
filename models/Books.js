@@ -39,6 +39,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true
     },
+    count_fav: {
+      type: DataTypes.INTEGER(11),
+      allowNull: true
+    },
     grade: {
       type: DataTypes.INTEGER(1),
       allowNull: true

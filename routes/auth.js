@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const config = require('../bin/config');
 const tools = require('./tools');
 const randtoken = require('rand-token');
+const jwtDecode = require('jwt-decode');
 
 router.post('/login', (req, res, next) => {
   if (!req.body || !req.body.email || !req.body.password) {
@@ -14,9 +15,11 @@ router.post('/login', (req, res, next) => {
       msg: 'Missing login information.'
     });
   }
-  models.Users.findOne({where : {
-    email: req.body.email
-  }}).then((usr) => {
+  models.Users.findOne({
+    where : {
+      email: req.body.email
+    }
+  }).then((usr) => {
     if (!usr)
       return res.status(403).json({
         status: 403,
@@ -86,7 +89,11 @@ router.patch('/password/reset/generate/code', (req, res, next) => {
 });
 
 router.get('/password/reset/check/code/:code', (req, res, next) => {
-  return models.Users.findOne({where: {reset_password_code: req.params.code}}).then((usr) => {
+  return models.Users.findOne({where:
+    {
+      reset_password_code: req.params.code
+    }
+  }).then((usr) => {
     if (!usr)
       return res.status(403).json({status: 403, success: false, msg: "This code is not valid."});
     else
@@ -94,7 +101,45 @@ router.get('/password/reset/check/code/:code', (req, res, next) => {
   }).catch((err) => next(err));
 });
 
-router.post('/password/reset/', (req, res, next) => {
+router.post('/password/check', tools.verifyToken, (req, res, next) => {
+  let decoded = jwtDecode(token);
+  if (!req.body.password) {
+    return res.status(422).json({
+      status: 422,
+      success: false,
+      msg: 'Missing password in the body.'
+    });
+  }
+  if (!decoded)
+    return res.status(403).json({
+      status: 403,
+      success: false,
+      msg: "Token is invalid"
+    });
+  models.Users.findOne({
+    where: {
+      email: decoded.email
+    }
+  }).then((usr) => {
+    bcrypt.compare(req.body.password, usr.password, (err, isMatch) => {
+      if (isMatch) {
+        return res.status(200).json({
+          status: 200,
+          success: true,
+          msg: 'The password is matching'
+        });
+      } else {
+        return res.status(403).json({
+          status: 403,
+          success: true,
+          msg: 'The password is not matching'
+        });
+      }
+    });
+  }).catch((err) => next(err));
+});
+
+router.post('/password/reset', (req, res, next) => {
   let infos = {};
   infos.reset_password_code = null;
   if (!req.body.code)
@@ -129,8 +174,7 @@ router.post('/password/reset/', (req, res, next) => {
           }
           infos.password = hash;
           return usr.update(infos).then((usr) => {
-            // TODO : get email of the user with the code sent, and send an email
-            //tools.sendMail(req.body.email, "Votre mot de passe de votre compte Feedbook a été réinitialisé.", "Mot de passe Feedbook r&initialisé");
+            tools.sendMail(usr.email, "Votre mot de passe de votre compte Feedbook a été réinitialisé.", "Mot de passe Feedbook réinitialisé");
             return res.status(200).json({status: 200, sucecess: true, msg : "Password updated.", user: usr});
           })
         })
@@ -224,6 +268,7 @@ router.post('/register', (req, res, next) => {
                 date_joined: new Date(),
                 first_name: req.body.first_name,
                 last_name: req.body.last_name,
+                profile_picture: "basic_user_pic.jpg",
                 refresh_token: randtoken.generate(16)
               }).then((usr) => {
                 user = usr;

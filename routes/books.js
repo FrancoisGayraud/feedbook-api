@@ -7,10 +7,7 @@ const tools = require('./tools');
 let Sequelize = require("sequelize");
 const Op = Sequelize.Op;
 
-// TODO : FAIRE LES TESTS POUR BOOKS
 // TODO : PINGDOM (ADRESSE : Feedbook.api@gmail.com) QUI CHECK
-// TODO : FAIRE UN CALL POUR RECUP TOUS LES BOOKS D'UN AUTHOR PAR SON ID
-
 // NOUVEAUTE : SYSTEM DE GRADE
 
 router.post('/', tools.verifyToken, (req, res, next) => {
@@ -50,6 +47,7 @@ router.post('/', tools.verifyToken, (req, res, next) => {
             image_url: !req.body.image_url ? null : req.body.image_url,
             description: req.body.description,
             pub_type: req.body.pub_type,
+            count_fav: 0,
             grade: 0,
             created_at: new Date()
           }).then((book) => {
@@ -74,7 +72,16 @@ router.get('/', tools.verifyToken, (req, res, next) => {
       msg: "Token is invalid"
     });
   else {
-    models.Books.findAll().then((books) => {
+    models.Books.findAll(
+      {
+        include: [
+          {
+            model: models.Users,
+            as: 'author',
+            attributes: ['username', 'id', 'first_name', 'last_name']
+          }
+        ]
+      }).then((books) => {
       return res.status(200).json({
         status: 200,
         books: books,
@@ -95,7 +102,17 @@ router.get('/page/:page', tools.verifyToken, (req, res, next) => {
     });
   else {
     models.Books.count().then(c => {
-      models.Books.findAll({offset : (req.params.page - 1) * 20, limit: (((req.params.page - 1) * 20) + 20)}).then((books) => {
+      models.Books.findAll({
+        offset: (req.params.page - 1) * 20,
+        limit: 20,
+        include: [
+          {
+            model: models.Users,
+            as: 'author',
+            attributes: ['username', 'id', 'first_name', 'last_name']
+          }
+        ]
+      }).then((books) => {
         return res.status(200).json({
           status: 200,
           page: parseInt(req.params.page), totalBooks : c,
@@ -123,7 +140,15 @@ router.get('/timerange/:from/:to', tools.verifyToken, (req, res, next) => {
           [Op.gte]: new Date(req.params.from),
           [Op.lte]: new Date(req.params.to)
         }
-      }}
+      }
+    },
+      include: [
+        {
+          model: models.Users,
+          as: 'author',
+          attributes: ['username', 'id', 'first_name', 'last_name']
+        }
+      ]
     }).then((books) => {
       return res.status(200).json({
         status: 200,
@@ -178,11 +203,22 @@ router.get('/search/:page', tools.verifyToken, (req, res, next) => {
             }
           },
           offset: (req.params.page - 1) * 20,
-          limit: (((req.params.page - 1) * 20) + 20),
+          limit: 20,
+          include: [
+            {
+              model: models.Users,
+              as: 'author',
+              attributes: ['username', 'id', 'first_name', 'last_name']
+            }
+          ]
         }).then((books) => {
           return res.status(200).json({
-            status: 200, totalPages: books.count % 20 === 0 ? books.count / 20 : Math.floor(books.count / 20) + 1,
-            totalBooks: books.count, books: books.rows, success: true, msg: "Books retrieved successfully"
+            status: 200,
+            totalPages: books.count % 20 === 0 ? books.count / 20 : Math.floor(books.count / 20) + 1,
+            totalBooks: books.count,
+            books: books.rows,
+            success: true,
+            msg: "Books retrieved successfully"
           });
         })
       }
@@ -190,6 +226,23 @@ router.get('/search/:page', tools.verifyToken, (req, res, next) => {
         return res.status(404).json({status: 404, success: false, msg: "Author not found."});          }
     }).catch((err) => next(err));
   }
+});
+
+router.get('/most/favorites/:page', tools.verifyToken, (req, res, next) =>  {
+  return models.Books.findAndCountAll({
+    offset: (req.params.page - 1) * 20,
+    limit: 20,
+    order: [['count_fav', 'DESC']]
+  }).then((books) => {
+    return res.status(200).json({
+      status: 200,
+      totalPages: books.count % 20 === 0 ? books.count / 20 : Math.floor(books.count / 20) + 1,
+      totalBooks: books.count,
+      books: books.rows,
+      success: true,
+      msg: "Books retrieved successfully"
+    });
+  });
 });
 
 router.delete('/:id', tools.verifyToken, (req, res, next) => {
@@ -232,17 +285,25 @@ router.get('/:id', tools.verifyToken, (req, res, next) => {
       msg: "Token is invalid"
     });
   else {
-    models.Books.findById(req.params.id).then((book) => {
+    models.Books.findById(
+      req.params.id,
+      {
+        include: [
+          {
+            model: models.Users,
+            as: 'author',
+            attributes: ['username', 'id', 'first_name', 'last_name']
+          }
+        ]
+      }
+    ).then((book) => {
       currentBook = book;
       if (book) {
-        models.Users.findById(book.user_id).then((user) => {
-          return res.status(200).json({
-            status: 200,
-            books: currentBook,
-            author: user.username,
-            success: true,
-            msg: "Book retrieved successfully"
-          });
+        return res.status(200).json({
+          status: 200,
+          books: currentBook,
+          success: true,
+          msg: "Book retrieved successfully"
         });
       } else  {
         return res.status(404).json({
@@ -267,7 +328,14 @@ router.get('/type/:type', tools.verifyToken, (req, res, next) => {
     return models.Books.findAll({
       where: {
         type: req.params.type
-      }
+      },
+      include: [
+        {
+          model: models.Users,
+          as: 'author',
+          attributes: ['username', 'id', 'first_name', 'last_name']
+        }
+      ]
     }).then((books) => {
       return res.status(200).json({
         status: 200,
@@ -297,7 +365,14 @@ router.get('/me/public', tools.verifyToken, (req, res, next) => {
         where: {
           user_id: usr.id,
           pub_type: "p"
-        }
+        },
+        include: [
+          {
+            model: models.Users,
+            as: 'author',
+            attributes: ['username', 'id', 'first_name', 'last_name']
+          }
+        ]
       }).then((books) => {
         return res.status(200).json({
           status: 200,
@@ -328,7 +403,14 @@ router.get('/me/private', tools.verifyToken, (req, res, next) => {
         where: {
           user_id: usr.id,
           pub_type: "v"
-        }
+        },
+        include: [
+          {
+            model: models.Users,
+            as: 'author',
+            attributes: ['username', 'id', 'first_name', 'last_name']
+          }
+        ]
       }).then((books) => {
         return res.status(200).json({
           status: 200,
@@ -351,6 +433,10 @@ router.patch('/:id', tools.verifyToken, (req, res, next) => {
     infos.description = req.body.description;
   if (req.body.type)
     infos.type = req.body.type;
+  if (req.body.image_url)
+    infos.image_url = req.body.image_url;
+  if (req.body.pdf_url)
+    infos.pdf_url = req.body.pdf_url;
   return models.Books.findByPk(req.params.id).then((book) => {
     return book.update(infos).then((book) => {
       return res.status(200).json({

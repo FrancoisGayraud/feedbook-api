@@ -18,6 +18,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true
     },
+    pub_type: {
+      type: DataTypes.STRING(1),
+      allowNull: true
+    },
     id: {
       type: DataTypes.INTEGER(7),
       primaryKey: true,

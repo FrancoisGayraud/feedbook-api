@@ -36,7 +36,7 @@ router.patch('/password', tools.verifyToken, (req, res, next) => {
   let infos = {};
   let decoded = jwtDecode(token);
   if (!req.body.old_password) {
-    return res.status(409).json({status: 409, success: false, msg: "Missing old password."})
+    return res.status(409).json({status: 409, success: false, msg: "Missing parameter old_password."})
   }
   if (!decoded)
     return res.status(403).json({status: 403, success: false, msg: "Token is invalid."});
@@ -174,12 +174,24 @@ router.patch('/me', tools.verifyToken, (req, res, next) => {
   let decoded = jwtDecode(token);
   if (!decoded)
     return res.status(403).json({status: 403, success: false, msg: "Token is invalid."});
-  return models.Users.findOne({ where : {username: req.body.username}}).then((usr) => {
+  return models.Users.findOne({
+    where : {
+      username: req.body.username
+    }
+  }).then((usr) => {
     if (!usr || usr.email === decoded.email) {
-      return models.Users.findOne({where: {email: decoded.email}}).then((usr) => {
+      return models.Users.findOne({
+        where: {
+          email: decoded.email
+        }
+      }).then((usr) => {
         return usr.update(infos).then((usr) => {
           user = usr;
-          return models.Profiles.findOne({where: {user_id: usr.dataValues.id}}).then((profile) => {
+          return models.Profiles.findOne({
+            where: {
+              user_id: usr.dataValues.id
+            }
+          }).then((profile) => {
             return profile.update(infos).then((profile) => {
               return res.status(200).json({
                 status: 200,
